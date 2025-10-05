@@ -1,98 +1,104 @@
-on: push
+GitHub Actions Workflow
 
-ทำให้ Workflow รัน ทุกครั้งที่มีการ Push โค้ดไปที่ branch main
+on: push → รันเมื่อมีการ Push โค้ดไป branch main
 
-ช่วยให้ทีมสามารถตรวจสอบโค้ดที่ถูกส่งขึ้น repository ได้ทันที
+on: pull_request → รันเมื่อมี Pull Request ไป branch main
 
-on: pull_request
+jobs → งานหลักใน Workflow (เช่น Checkout, Lint, Build, Notify)
 
-ทำให้ Workflow รัน เมื่อมีการสร้างหรืออัปเดต Pull Request ไปที่ branch main
+steps → ขั้นตอนย่อยในแต่ละ job (เช่น run command หรือใช้ action)
 
-ช่วยให้มั่นใจว่าโค้ดที่จะ Merge เข้าสู่ main ผ่าน การตรวจสอบ CI/CD แล้ว
+ประโยชน์: ตรวจสอบโค้ดอัตโนมัติ ลดข้อผิดพลาดก่อน Merge
 
-## Docker Compose — คำอธิบาย (services, ports, volumes, environment)
+Docker Compose
 
-- services:
-  - หมายถึงกลุ่ม containers ที่เราต้องการรันร่วมกันเป็นส่วนหนึ่งของสแต็ก เช่น `web` และ `db` ในตัวอย่างเราใช้ `nginx` และ `mysql` แต่ละ service ระบุ image, คำสั่งรัน, network และ volumes ได้
-  - ประโยชน์: จัดการหลาย container เป็นกลุ่มเดียวกัน สร้าง network ระหว่างกันได้อัตโนมัติ และทำให้สาธิตสภาพแวดล้อมการทำงานได้อย่างรวดเร็ว
+services → container ที่จะรัน (เช่น Web, DB)
 
-- ports:
-  - กำหนดการแม็ปพอร์ตระหว่าง host กับ container เช่น `8080:80` หมายถึง พอร์ต 8080 บนเครื่อง host จะถูกส่งต่อไปยังพอร์ต 80 ของ container
-  - ประโยชน์: ช่วยให้บริการภายใน container เข้าถึงจากเครื่องภายนอกหรือเครื่องผู้พัฒนาได้
+ports → กำหนด port mapping ระหว่าง host ↔ container
 
-- volumes:
-  - ใช้สำหรับเก็บข้อมูลถาวรหรือแชร์โฟลเดอร์ระหว่าง host กับ container เช่น บันทึกฐานข้อมูลหรือไฟล์ log
-  - ประโยชน์: ข้อมูลยังคงอยู่แม้ container จะถูกลบ/สร้างใหม่ ช่วยให้การพัฒนาและทดสอบมีข้อมูลคงที่
+volumes → เก็บข้อมูลถาวรระหว่าง host ↔ container
 
-- environment:
-  - กำหนดตัวแปรแวดล้อม (environment variables) ให้กับ container เช่น `MYSQL_ROOT_PASSWORD` หรือ `MYSQL_DATABASE`
-  - ประโยชน์: ตั้งค่าการทำงานของแอป/ฐานข้อมูล โดยไม่ต้องแก้ไข image หรือโค้ด (สามารถเก็บค่าในไฟล์ `.env` หรือใช้ secrets ใน CI)
+environment → ตั้งค่าตัวแปรภายใน container (เช่น รหัสผ่าน DB, ชื่อ database)
 
-## Docker Compose ทำงานร่วมกับ Project ยังไง
+การทำงานร่วมกับ Project:
 
-- บทบาทหลัก:
-  - Docker Compose ช่วยรันสแต็กของบริการ (services) แบบโลคัลเพื่อใช้ในการพัฒนา ทดสอบ หรือสาธิตก่อน deploy จริง
-  - มักใช้สำหรับสร้างสภาพแวดล้อมที่ใกล้เคียง production เช่น รัน web server, database, cache พร้อมกัน
+รันหลาย container พร้อมกัน
 
-- วงจรการใช้งานร่วมกับ Project:
-  1. นักพัฒนาสร้าง/แก้ไข `docker-compose.yml` เพื่อกำหนด service ที่ต้องการ
-  2. รัน `docker-compose up` บนเครื่องพัฒนา (หรือ CI runner ที่รองรับ Docker) เพื่อเริ่ม containers ทั้งหมด
-  3. ทดสอบแอป locally โดยเข้าถึงผ่านพอร์ตที่แม็ปไว้ (เช่น http://localhost:8080)
-  4. เมื่อผ่านการทดสอบบน Compose แล้ว ขั้นตอน CI/CD อาจสร้าง Docker image และ push ขึ้น registry
-  5. จากนั้น CD จะนำ image เหล่านั้นมา deploy บน Kubernetes cluster โดยใช้ `k8s/*.yml` (หรือ Helm)
+ตั้งค่า centralized, portable, repeatable
 
-- ข้อดีเพิ่มเติม:
-  - ให้สภาพแวดล้อมทดสอบที่รวดเร็วและสม่ำเสมอสำหรับทีม
-  - ลดความต่างของ environment ระหว่างเครื่องพัฒนาและ CI
-  - ง่ายต่อการอ่านและแชร์ setup ด้วยไฟล์ YAML เดียว
+เชื่อมต่อ container ได้ง่าย
 
-(เพิ่มได้: ถ้าต้องการ ผมสามารถเพิ่มตัวอย่าง `volumes` สำหรับ `db` หรือตัวอย่าง `.env` file เพื่อแสดง pattern การจัดการ secret/credential แบบปลอดภัย)
+เหมาะกับ development และ testing
 
-## Kubernetes — คำอธิบาย (Deployment, replicas, selector, template)
+Kubernetes Deployment & Service - Summary
+Deployment
 
-- Deployment:
-  - เป็น controller ที่ใช้จัดการการรันชุดของ Pods แบบ declarative (กำหนด desired state แล้ว Kubernetes จะพยายามทำให้ตรง)
-  - มีหน้าที่เช่น สร้าง/ลบ/อัปเดต Pods, ทำ rolling update, และทำ self-healing (restart/replace เมื่อพ็อดล้ม)
-  - ในโปรเจคนี้ใช้ `k8s/deployment.yml` เพื่อประกาศ Deployment ของ `nginx`
+จัดการการรัน Pod แบบ declarative
 
-- replicas:
-  - ระบุจำนวนสำเนาของ Pod ที่ต้องการให้รันพร้อมกัน เช่น `replicas: 2` หมายถึงต้องการให้มี 2 พ็อดของ nginx เพื่อเพิ่ม availability และรองรับโหลด
+replicas → จำนวน instance ของ Pod
 
-- selector:
-  - เป็นกลไกการจับคู่ (label selector) ที่บอกว่า Deployment หรือ Service ควรทำงานกับ Pods ใด เช่น `matchLabels: { app: nginx }`
-  - เมื่อ Deployment สร้าง Pods จะใส่ labels ตามที่กำหนดไว้ใน `template.metadata.labels` เพื่อให้ selector จับคู่ได้
+selector → ใช้ match Pod กับ Deployment ผ่าน labels
 
-- template:
-  - คือ Pod template (metadata + spec) ที่ Deployment ใช้เป็นต้นแบบในการสร้าง Pods ใหม่
-  - ภายใน template จะกำหนด container image, ports, env, volume mounts เป็นต้น
+template → กำหนดโครงสร้าง Pod (containers, ports, env)
 
-## Service — คำอธิบาย (Service, port, targetPort)
+Service
 
-- Service:
-  - เป็น abstraction ที่ให้การเข้าถึงกลุ่ม Pods โดยมี IP และพอร์ตที่คงที่ (virtual) แม้ Pods ภายในจะขึ้นลงหรือเปลี่ยนแปลง
-  - Service จะใช้ `selector` เพื่อเลือก Pods ที่จะเป็น backend (Endpoints)
-  - มีชนิดต่างๆ เช่น `ClusterIP` (ภายใน cluster), `NodePort` (เปิดพอร์ตบนทุก Node), `LoadBalancer` (ขอ LB จาก cloud provider)
+เปิด access ให้ Pod ผ่าน network
 
-- port:
-  - พอร์ตที่ Service เปิดให้ผู้เรียกติดต่อ (เช่น Service port = 80)
-  - ผู้เรียกภายนอกหรือภายใน cluster จะติดต่อไปที่พอร์ตนี้ของ Service
+port → port ของ Service ที่ client ติดต่อ
 
-- targetPort:
-  - พอร์ตบน container/pod ที่ Service จะส่ง traffic เข้าไป (เช่น containerPort = 80)
-  - Service จะ map `port` → `targetPort` เพื่อส่งคำขอไปยัง container ที่แท้จริง
+targetPort → port ของ Pod/container ที่ Service ส่ง traffic ไป
 
-- nodePort (เมื่อใช้ NodePort):
-  - พอร์ตบน Node ที่เปิดให้เข้าถึง Service จากภายนอก (เช่น ใน `k8s/service.yml` เรากำหนด `nodePort: 30080`)
-  - การเรียก http://<node-ip>:30080 จะถูกส่งไปยัง Service แล้วกระจายไปยัง Pods ที่ถูก selector จับ
+ความสัมพันธ์
 
-## ความสัมพันธ์ระหว่าง Deployment และ Service
+Deployment สร้างและจัดการ Pod
 
-- Deployment สร้างและจัดการ Pods ตาม `template` และ `replicas` ที่กำหนด โดยใส่ `labels` ให้กับ Pods เหล่านั้น
-- Service ใช้ `selector` เดียวกันกับ label ของ Pods เพื่อชี้ไปยัง Pods ที่ต้องการรับ traffic
-- ผลลัพธ์: Service ให้ endpoint คงที่ (IP:port) สำหรับเข้าถึงแอป แม้จำนวนหรือตัวตนของ Pods จะเปลี่ยนไปจากการ scale หรือ rollout
-- การไหลของ traffic (สรุป):
-  1. ผู้เรียกติดต่อไปที่ Service (ClusterIP / NodePort / LoadBalancer)
-  2. Service ใช้ selector หาค่า Endpoints (IPs ของ Pods ที่ match)
-  3. Service ส่ง traffic ไปยังหนึ่งใน Pods (ผ่าน kube-proxy หรือ IPVS) โดย map `port` → `targetPort`
+Service เปิดให้เข้าถึง Pod ผ่าน network
 
-(เพิ่มเติม: ถ้าต้องการ ผมสามารถเพิ่มตัวอย่าง readiness/liveness probe ใน `k8s/deployment.yml` เพื่อแสดงการควบคุม lifecycle และการทำ health check ได้)
+Selector ของ Service ชี้ไปยัง labels ของ Pod จาก Deployment
+
+ผลลัพธ์: ระบบสามารถรัน, scale และเข้าถึง application ได้อย่างเสถียร
+สรุป Project CI/CD แบบครบวงจร
+
+ไฟล์ YAML ทำงานร่วมกัน
+
+.github/workflows/ci.yml → Workflow อัตโนมัติ ตรวจสอบ Lint, Build, Notify
+
+docker-compose.yml → รันระบบ Web + DB บน local / dev
+
+k8s/deployment.yml → สร้างและจัดการ Pod บน Kubernetes
+
+k8s/service.yml → เปิด access ให้ Pod ผ่าน network
+
+ลำดับขั้นตอนเมื่อ Push โค้ด
+
+Push โค้ดไป branch main
+
+GitHub Actions Workflow รัน (Lint → Build → Kubernetes dry-run → Notify)
+
+Docker Compose รัน local / dev environment
+
+Kubernetes Deployment & Service apply → ระบบพร้อมใช้งานบน Cluster
+
+โครงสร้าง Project
+
+my-ci-cd-project/
+├─ .github/workflows/ci.yml
+├─ docker-compose.yml
+├─ k8s/deployment.yml
+├─ k8s/service.yml
+└─ README.md
+
+
+ความสัมพันธ์ Pipeline
+
+Push Code
+    │
+    ▼
+GitHub Actions Workflow
+    │
+    ▼
+Docker Compose (Web + DB)
+    │
+    ▼
+Kubernetes Deployment & Service → Production / Test Environment
