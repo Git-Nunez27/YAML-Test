@@ -64,10 +64,15 @@ jobs:
       - name: Kubernetes dry-run (client)
         run: |
           if [ -d k8s ]; then
-            # Avoid contacting a Kubernetes API server for OpenAPI validation when no kubeconfig is present.
-            # --dry-run=client performs local validation; --validate=false skips schema validation that
-            # would attempt to download the OpenAPI schema from the API server.
-            kubectl apply --dry-run=client --validate=false -f k8s/
+            # Only run kubectl dry-run if a kubeconfig/cluster is provided via env (e.g. KUBECONFIG or KUBE_CONFIG_DATA).
+            # This avoids kubectl attempting to contact a local API server (which isn't present in the runner)
+            # and producing connection refused errors.
+            if [ -n "${KUBECONFIG:-}" ] || [ -n "${KUBE_CONFIG_DATA:-}" ]; then
+              echo "Kube config detected — running kubectl dry-run (client)"
+              kubectl apply --dry-run=client --validate=false -f k8s/
+            else
+              echo "No kubeconfig provided — skipping kubectl dry-run to avoid API server connection errors"
+            fi
           else
             echo "No k8s manifests to check"
           fi
