@@ -64,7 +64,10 @@ jobs:
       - name: Kubernetes dry-run (client)
         run: |
           if [ -d k8s ]; then
-            kubectl apply --dry-run=client -f k8s/
+            # Avoid contacting a Kubernetes API server for OpenAPI validation when no kubeconfig is present.
+            # --dry-run=client performs local validation; --validate=false skips schema validation that
+            # would attempt to download the OpenAPI schema from the API server.
+            kubectl apply --dry-run=client --validate=false -f k8s/
           else
             echo "No k8s manifests to check"
           fi
