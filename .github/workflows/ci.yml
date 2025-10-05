@@ -52,11 +52,9 @@ jobs:
             sys.exit(1)
           PY
 
+      # ✅ แก้ตรงนี้: ใช้ docker CLI แทน action ที่ไม่มีจริง
       - name: Check Docker Compose file
-        uses: docker/compose-action@v2
-        with:
-          compose-file: docker-compose.yml
-          run: config
+        run: docker compose config
 
       - name: Install kubectl
         uses: azure/setup-kubectl@v3
