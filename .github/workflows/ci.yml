@@ -2,90 +2,37 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   pull_request:
-    branches: [ main ]
 
 jobs:
-  checkout_repo:
-    name: Checkout Repository
+  build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      # Checkout source code
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-  lint_yaml:
-    name: Lint YAML, Docker Compose & Kubernetes dry-run
-    runs-on: ubuntu-latest
-    needs: checkout_repo
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      # Lint YAML
+      - name: Lint YAML
+        uses: ibiqlik/action-yamllint@v3
         with:
-          python-version: '3.x'
+          file_or_dir: .
+          config_file: .yamllint.yml
 
-      - name: Install PyYAML
-        run: pip install pyyaml
+      # Docker Compose config check
+      - name: Docker Compose config check
+        run: docker compose config
 
-      - name: Lint YAML files (syntax)
+      # Kubernetes dry-run (ใช้ถ้ามีไฟล์ manifest k8s/)
+      - name: Kubernetes dry-run
         run: |
-          python - <<'PY'
-          import sys, glob, yaml
-          ok = True
-          files = glob.glob('**/*.yml', recursive=True) + glob.glob('**/*.yaml', recursive=True)
-          files = sorted(set(files))
-          if not files:
-            print("No YAML files found")
-            sys.exit(0)
-          for f in files:
-            try:
-              with open(f,'r',encoding='utf-8') as fh:
-                yaml.safe_load(fh)
-              print(f"[OK] {f}")
-            except Exception as e:
-              print(f"[ERROR] {f}: {e}")
-              ok = False
-          if not ok:
-            sys.exit(1)
-          PY
+          kubectl apply -f k8s/ --dry-run=client
 
-      - name: Check Docker Compose file
-        uses: docker/compose-action@v2
-        with:
-          compose-file: docker-compose.yml
-          run: config
-
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'latest'
-
-      - name: Kubernetes dry-run (client)
+      # Build Application (ตัวอย่าง แก้ตามโปรเจกต์จริง)
+      - name: Build Application
         run: |
-          if [ -d k8s ]; then
-            kubectl apply --dry-run=client -f k8s/
-          else
-            echo "No k8s manifests to check"
-          fi
-
-  build_app:
-    name: Build Application
-    runs-on: ubuntu-latest
-    needs: lint_yaml
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Build
-        run: echo "Build successful"
-
-  notify:
-    name: Notify
-    runs-on: ubuntu-latest
-    needs: build_app
-    steps:
-      - name: Notify
-        run: echo "Workflow finished"
+          echo "Building application..."
+          # เช่น npm install && npm run build
